@@ -3,39 +3,33 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies including dev dependencies
 RUN npm ci
 
-# Copy source code
-COPY . .
+COPY tsconfig.json ./
+COPY src ./src
 
-# Build the application
 RUN npm run build
 
 # Production stage
-FROM node:20-slim
+FROM node:20-slim AS production
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Remove husky prepare script and install production dependencies
-RUN npm pkg delete scripts.prepare && \
+RUN npm pkg delete scripts.prepare 2>/dev/null || true && \
     npm ci --omit=dev && \
     npm cache clean --force
 
-# Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy configuration files
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
-
-# Set environment variables
 ENV NODE_ENV=production
+ENV PORT=3000
 
-# Start the application
-CMD ["node", "dist/index.js"] 
+EXPOSE 3000
+
+# MCP HTTP + /health (see src/index.ts)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+CMD ["node", "dist/index.js"]

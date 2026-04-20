@@ -1,0 +1,37 @@
+# Restaurant Booking MCP server — HTTP transport on /mcp, health on /health
+#
+# Usage:
+#   cp .env.example .env   # set GOOGLE_MAPS_API_KEY (required), optional YELP_API_KEY, etc.
+#   docker compose up -d --build
+#
+# Point your uAgent / clients at: http://<host>:<PORT>/mcp
+# (set MCP_SERVER_URL in the agent env, e.g. http://host.docker.internal:3000/mcp from another container on Docker Desktop)
+
+services:
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcp-restaurant-booking:latest
+    container_name: mcp-restaurant-booking
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      # Force listen port inside the container (host mapping uses top-level PORT in .env for compose)
+      PORT: "3000"
+    env_file:
+      - .env
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

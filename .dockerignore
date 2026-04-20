@@ -1,19 +1,41 @@
+# Dependencies & build output
 node_modules
-npm-debug.log
+npm-debug.log*
 dist
+
+# Git & IDE
 .git
 .gitignore
-README.md
-.env.example
-.nyc_output
+.github
+.cursor
+.vscode
+.idea
+
+# Env & secrets (inject at runtime via compose / -e)
+.env
+.env.*
+!.env.example
+
+# Python uAgent (not part of MCP image)
+venv
+.venv
+__pycache__
+*.pyc
+src/fetch_uagent.py
+src/stripe_checkout.py
+requirements-fetch-uagent.txt
+
+# Docs & tests (not needed to compile MCP)
+*.md
+!README.md
 coverage
 .nyc_output
-.coverage
-.eslintrc.js
+eslint.config.js
 jest.config.js
+.prettierrc*
+audit-ci.json
 test-mcp-server.sh
-quick-test.sh
-*.md
+
+# OS
 .DS_Store
-Dockerfile
-.dockerignore 
+Thumbs.db
